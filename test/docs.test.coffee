@@ -1,7 +1,7 @@
 chai = require('chai')
 chai.should()
 
-jade = require 'jade'
+pug = require 'pug'
 jade2php = require '../src/jade2php'
 exec = require 'sync-exec'
 fs = require 'fs'
@@ -20,9 +20,12 @@ runPhp = (phpCode) ->
 
 test = (testName, jadeSrc) ->
 	it testName, ->
-		referenceHtml = jade.render jadeSrc
+		referenceHtml = pug.render jadeSrc,
+			inlineRuntimeFunctions: true
 		phpTemplate = jade2php jadeSrc
+		# console.log phpTemplate
 		testHtml = runPhp phpTemplate
+		# console.log testHtml
 		testHtml.should.eql referenceHtml
 
 describe 'Jade Language Reference', ->
@@ -150,7 +153,7 @@ describe 'Jade Language Reference', ->
 			- var attributes = {'data-foo': 'bar'};
 			div#foo(data-bar="foo")&attributes(attributes)
 		"""
-	
+
 	describe 'Code & Interpolation', ->
 		test 'Unbuffered Code', """
 			- for (var x = 0; x < 3; x++)

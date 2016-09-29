@@ -1,12 +1,11 @@
 chai = require('chai')
 chai.should()
 
-jade = require 'jade'
 jade2php = require '../src/jade2php'
 
 describe 'JadePhpCompiler', ->
 	c = (jadeSrc, referenceCode, opts = null) ->
-		opts or= 
+		opts or=
 			omitPhpRuntime: yes
 			omitPhpExtractor: yes
 		compiledPhp = jade2php jadeSrc, opts
@@ -25,33 +24,33 @@ describe 'JadePhpCompiler', ->
 		it 'should support self-closing tags', ->
 			c "hr", "<hr/>"
 			c "br", "<br/>"
-		
+
 		it 'should support doctypes', ->
 			c "doctype html", "<!DOCTYPE html>"
 			c "doctype xml", '<?php echo \'<?xml version="1.0" encoding="utf-8" ?>\' ?>'
 			c "doctype strict", '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">'
-		
+
 		it 'should support tags with text', ->
 			c 'p Hello world!', '<p>Hello world!</p>'
 			c 'p\n\t| Hello world!', '<p>Hello world!</p>'
 			c 'p\n\t| Hello world!\n\t| Again!', '<p>Hello world!\nAgain!</p>'
 			c 'div.\n\tHello world!', '<div>Hello world!</div>'
-		
+
 		it 'should support tags with attrs', ->
 			c 'option(value="5")', '<option value="5"></option>'
 			c 'option(value="5", data-src="http://test.com/example.png")', '<option value="5" data-src="http://test.com/example.png"></option>'
-		
+
 		it 'should support classes via dot notation', ->
 			c "p.lead", '<p class="lead"></p>'
 			c "p.lead.big", '<p class="lead big"></p>'
-		
+
 		it 'should support ids via sharp notation', ->
 			c 'nav#main-nav', '<nav id="main-nav"></nav>'
 			c "br#separator", '<br id="separator"/>'
-		
+
 		it 'should support nested tags', ->
 			c 'div: div', '<div><div></div></div>'
-			c 'div#one: div#two.inner\n\t#three Hello world!', '<div id="one"><div id="two" class="inner"><div id="three">Hello world!</div></div></div>'
+			c 'div#one: div#two.inner\n\t#three Hello world!', '<div id="one"><div class="inner" id="two"><div id="three">Hello world!</div></div></div>'
 
 	describe 'rendering simple expressions', ->
 
@@ -62,11 +61,11 @@ describe 'JadePhpCompiler', ->
 			c '!= value', '<?php echo $value ?>'
 
 		it 'should support attr values', ->
-			c 'div(data-value=someValue)', "<div<?php attr('data-value', $someValue, true) ?>></div>"
-		
+			c 'div(data-value=someValue)', "<div<?php pug_attr('data-value', $someValue, true) ?>></div>"
+
 		it 'should support attr unescaped values', ->
-			c 'div(data-value!=someValue)', "<div<?php attr('data-value', $someValue, false) ?>></div>"
-		
+			c 'div(data-value!=someValue)', "<div<?php pug_attr('data-value', $someValue, false) ?>></div>"
+
 		it 'should support tag text', ->
 			c 'div= someText', '<div><?php echo htmlspecialchars($someText) ?></div>'
 
@@ -74,7 +73,7 @@ describe 'JadePhpCompiler', ->
 			c 'div!= someText', '<div><?php echo $someText ?></div>'
 
 		it 'should support several attrs and text', ->
-			c 'a(href=url, title=title)= title', "<a<?php attr('href', $url, true) ?><?php attr('title', $title, true) ?>><?php echo htmlspecialchars($title) ?></a>"
+			c 'a(href=url, title=title)= title', "<a<?php pug_attr('href', $url, true) ?><?php pug_attr('title', $title, true) ?>><?php echo htmlspecialchars($title) ?></a>"
 
 	describe 'string interpolation', ->
 
@@ -96,9 +95,9 @@ describe 'JadePhpCompiler', ->
 			c '.greeting Hello, #{firstName} #{lastName}!', '<div class=\"greeting\">Hello, <?php echo htmlspecialchars($firstName) ?> <?php echo htmlspecialchars($lastName) ?>!</div>'
 
 		it 'should support simple attr interpolation with variable', ->
-			c 'article(id="post-#{id}")', '<article id="post-<?php echo htmlspecialchars($id) ?>"></article>'
-			c 'article(id="post-#{type}-#{id}")', '<article id="post-<?php echo htmlspecialchars($type) ?>-<?php echo htmlspecialchars($id) ?>"></article>'
-			c 'article(id="post-#{type}-#{id}") Post \##{id} of type \'#{type}\'', '<article id="post-<?php echo htmlspecialchars($type) ?>-<?php echo htmlspecialchars($id) ?>">Post #<?php echo htmlspecialchars($id) ?> of type \'<?php echo htmlspecialchars($type) ?>\'</article>'
+			c 'article(id=`post-${id}`)', '<article<?php pug_attr(\'id\', "post-{$id}", true) ?>></article>'
+			c 'article(id=`post-${type}-${id}`)', '<article<?php pug_attr(\'id\', "post-{$type}-{$id}", true) ?>></article>'
+			c 'article(id=`post-${type}-${id}`) Post \##{id} of type \'#{type}\'', '<article<?php pug_attr(\'id\', "post-{$type}-{$id}", true) ?>>Post #<?php echo htmlspecialchars($id) ?> of type \'<?php echo htmlspecialchars($type) ?>\'</article>'
 
 			# jade not support this :(
 			# c 'article(id="post-!{idNumber}")', '<article id="post-<?php echo $idNumber ?>"></article>'
@@ -229,7 +228,7 @@ describe 'JadePhpCompiler', ->
 				- var someClasses = ["single-ended", "push-pull"]
 				p(class=someClasses)
 
-			""", "<?php $someClasses = null ?><p<?php attr_class($someClasses) ?>></p><?php $someClasses = array() ?><p<?php attr_class($someClasses, \"test\") ?>></p><?php $someClasses = array(\"single-ended\", \"push-pull\") ?><p<?php attr_class($someClasses) ?>></p>"
+			""", "<?php $someClasses = null ?><p<?php pug_attr('class', pug_classes(array($someClasses), array(true)), false) ?>></p><?php $someClasses = array() ?><p<?php pug_attr('class', pug_classes(array($someClasses, \"test\"), array(true, false)), false) ?>></p><?php $someClasses = array(\"single-ended\", \"push-pull\") ?><p<?php pug_attr('class', pug_classes(array($someClasses), array(true)), false) ?>></p>"
 
 	describe 'mixins', ->
 		it 'simple', ->
@@ -318,13 +317,13 @@ describe 'JadePhpCompiler', ->
 							li= item
 
 				+list('my-list', 1, 2, 3, 4)
-			""", "<?php if (!function_exists('mixin__list')) { function mixin__list($block = null, $attributes = array(), $id = null) { $items = array_slice(func_get_args(), 3); global $■;$■['id'] = $id;?><ul<?php attr('id', $id, true) ?>><?php if ($items) : foreach ($items as $item) : $■['item'] = $item; ?><li><?php echo htmlspecialchars($item) ?></li><?php endforeach; endif ?></ul><?php } } ?><?php mixin__list(null, array(), 'my-list', 1, 2, 3, 4) ?>"
+			""", "<?php if (!function_exists('mixin__list')) { function mixin__list($block = null, $attributes = array(), $id = null) { $items = array_slice(func_get_args(), 3); global $■;$■['id'] = $id;?><ul<?php pug_attr('id', $id, true) ?>><?php if ($items) : foreach ($items as $item) : $■['item'] = $item; ?><li><?php echo htmlspecialchars($item) ?></li><?php endforeach; endif ?></ul><?php } } ?><?php mixin__list(null, array(), 'my-list', 1, 2, 3, 4) ?>"
 
 	describe "other mixed tests", ->
 		it 'mixin + class attrs + interpolation', ->
 			c """
-				+e("li").item.col-sm-4(class="delivery-steps__item_\#{deliveryProcessItem.class}")
-			""", "<?php mixin__e(null, array('class' => array('item', 'col-sm-4', add(\"delivery-steps__item_\", $deliveryProcessItem['class'], \"\"))), \"li\") ?>"
+				+e("li").item.col-sm-4(class=`delivery-steps__item_${deliveryProcessItem.class}`)
+			""", "<?php mixin__e(null, array('class' => array('item', 'col-sm-4', \"delivery-steps__item_{$deliveryProcessItem['class']}\")), \"li\") ?>"
 
 	describe "pretty option", ->
 		it "should be ignored", ->

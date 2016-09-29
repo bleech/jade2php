@@ -8,6 +8,77 @@ function attr($name, $value = true, $escaped = true) {
 	}
 }
 
+function pug_attr($key, $val, $escaped, $terse) {
+	if ($val === false || $val == null || !isset($val) && ($key === 'class' || $key === 'style')) {
+    echo '';
+		return;
+  }
+  if ($val === true) {
+    echo ' ' . (isset($terse) ? $key : $key . '="' . $key . '"');
+		return;
+  }
+
+  if ($escaped) $val = pug_escape($val);
+  echo ' ' . $key . '="' . $val . '"';
+};
+
+
+function pug_attrs($obj, $terse){
+	$attrs = [];
+
+	if(isset($obj['class'])) {
+		$key = 'class';
+		$val = $obj['class'];
+		$val = pug_classes($val);
+		$attrs[] = pug_attr($key, $val, false, $terse);
+	}
+
+  foreach($obj as $key => $val) {
+    if ('class' === $key) {
+      continue;
+    }
+    $attrs[] = pug_attr($key, $val, false, $terse);
+  }
+  return $attrs;
+};
+
+function pug_classes_array($values, $escaping) {
+  $classString = '';
+	$className = null;
+	$padding = '';
+	$escapeEnabled = is_array($escaping);
+  foreach ($values as $i => $val) {
+    $className = pug_classes($val);
+    if (!$className) continue;
+    $escapeEnabled && $escaping[$i] && ($className = pug_escape($className));
+    $classString = $classString . $padding . $className;
+    $padding = ' ';
+  }
+  return $classString;
+}
+function pug_classes_object($classes) {
+  $classString = '';
+	$padding = '';
+  foreach ($classes as $key => $val) {
+    if ($key && $val) {
+      $classString = $classString . $padding . $key;
+      $padding = ' ';
+    }
+  }
+  return $classString;
+}
+function pug_classes($val, $escaping) {
+  if (is_array($val)) {
+    return pug_classes_array($val, $escaping);
+  } else {
+    return isset($val) ? $val : '';
+  }
+}
+
+function pug_escape($html){
+  return htmlspecialchars($html);
+};
+
 function attrs() {
 	$args = func_get_args();
 	$attrs = array();
@@ -56,5 +127,4 @@ function add() {
 	}
 	return $result;
 }
-
 ?>
